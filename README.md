@@ -1,5 +1,10 @@
 # MovieFlix2020_E17144_Stylianou_Ioannis
+
 Απαλλακτική εργασία πληροφοριακών συστημάτων
+### Υπεύθυνοι καθηγητές: 
+- Χρυσόστομος Συμβουλίδης, simvoul@unipi.gr
+- Jean-Didier Totow, totow@unipi.gr 
+
 Python
 -
 #### Requirements - automatically install using requirements.txt
