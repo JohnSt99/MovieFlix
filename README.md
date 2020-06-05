@@ -1,5 +1,15 @@
 # MovieFlix2020_E17144_Stylianou_Ioannis
 Απαλλακτική εργασία πληροφοριακών συστημάτων
+Python
+-
+#### Requirements
+- click==7.1.2
+- Flask==1.1.2
+- itsdangerous==1.1.0
+- Jinja2==2.11.2
+- MarkupSafe==1.1.1
+- pymongo==3.10.1
+- Werkzeug==1.0.1
 
 Docker
 -
