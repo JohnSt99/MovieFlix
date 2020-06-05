@@ -2,7 +2,7 @@
 Απαλλακτική εργασία πληροφοριακών συστημάτων
 Python
 -
-#### Requirements
+#### Requirements - automatically install using requirements.txt
 - click==7.1.2
 - Flask==1.1.2
 - itsdangerous==1.1.0
@@ -89,7 +89,7 @@ SETUP Mongo Image
   docker stop mongodb
 ```
 
-COPY json data files 
+Αντιγραφή των αρχείων με τα data σε json
 -
 ```
   docker cp "MovieFlix2020_E17144_Stylianou_Ioannis\flask\data\movies.json" mongodb:/movies.json
@@ -98,7 +98,7 @@ COPY json data files
   docker exec -it mongodb mongoimport --db=InfoSys --collection=Users --drop --file=users.json 
 ```
 
-VIEW Data in Mongodb Shell
+Προβολή δεδομένων σε MongoDB shell
 -
 ```
   docker exec -it mongodb mongo
@@ -109,7 +109,7 @@ VIEW Data in Mongodb Shell
   db.Users.find()
 ```
 
-Mathematical Knowledge - Sum Recalculation
+Μαθηματικές γνώσεις - Adjustment μέσου όρου χωρίς επανυπολογισμό
 -
 
   https://math.stackexchange.com/questions/22348/how-to-add-and-subtract-values-from-an-average
