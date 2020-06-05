@@ -85,7 +85,7 @@ sudo apt install docker-ce
 - Κάνουμε set τον χρήστη: `USER username`
 - Τρέχει όταν ξεκινήσει το container: `ENTRYPOINT [“executable”,”param1”,”param2”]`
 
-SETUP Mongo Image
+Εγκατάσταση mongodb image
 -
 ```
   docker pull mongo
