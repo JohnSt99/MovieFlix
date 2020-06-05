@@ -92,9 +92,9 @@ SETUP Mongo Image
 COPY json data files 
 -
 ```
-  docker cp "Information-Systems-Lab\lab5\flask\data\movies.json" mongodb:/movies.json
+  docker cp "MovieFlix2020_E17144_Stylianou_Ioannis\flask\data\movies.json" mongodb:/movies.json
   docker exec -it mongodb mongoimport --db=InfoSys --collection=Movies --drop --file=movies.json 
-  docker cp "Information-Systems-Lab\lab5\flask\data\users.json" mongodb:/users.json
+  docker cp "MovieFlix2020_E17144_Stylianou_Ioannis\flask\data\users.json" mongodb:/users.json
   docker exec -it mongodb mongoimport --db=InfoSys --collection=Users --drop --file=users.json 
 ```
 
@@ -102,7 +102,8 @@ VIEW Data in Mongodb Shell
 -
 ```
   docker exec -it mongodb mongo
-  use InfoSys
+  db MovieFlix
+  use MovieFlix
   show collections
   db.Movies.find()
   db.Users.find()
