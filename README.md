@@ -123,7 +123,7 @@ sudo apt install docker-ce
 
 `MAINTAINER John St <e17144@unipi.gr - jsm@hotmail.gr>`
 
-Εκτέλεση της εντολής `apt-get update` μέσα στο image:
+Εκτέλεση της εντολής apt-get update μέσα στο image:
 
 `RUN apt-get update`
 
