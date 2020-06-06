@@ -127,11 +127,11 @@ sudo apt install docker-ce
 
 `RUN apt-get update`
 
-Εκτέλεση της εντολής `apt-get install -y python3 python3-pip` μέσα στο image για την εγκατάσταση της python3 και του pip:
+Εκτέλεση της εντολής μέσα στο image για την εγκατάσταση της python3 και του pip:
 
 `RUN apt-get install -y python3 python3-pip `
 
-Εκτέλεση της εντολής `pip3 install flask pymongo` μέσα στο image για την εγκατάσταση των βασικών πακέτων στα οποία στηρίζεται το application μας. 
+Εκτέλεση της εντολής μέσα στο image για την εγκατάσταση των βασικών πακέτων στα οποία στηρίζεται το application μας. 
 
 `RUN pip3 install flask pymongo `
 
