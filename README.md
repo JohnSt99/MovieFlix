@@ -113,6 +113,40 @@ sudo apt install docker-ce
   db.Movies.find()
   db.Users.find()
 ```
+Επεξήγηση του Dockerfile
+-
+Επιλογή του base image για την νέα εικόνα που θα δημιουργήσουμε:
+`FROM ubuntu:16.04 `
+Όνομα και email του maintainer του image:
+`MAINTAINER John St <e17144@unipi.gr - jsm@hotmail.gr>`
+Εκτέλεση της εντολής `apt-get update` μέσα στο image:
+`RUN apt-get update`
+Εκτέλεση της εντολής `apt-get install -y python3 python3-pip` μέσα στο image για την εγκατάσταση της python3 και του pip:
+`RUN apt-get install -y python3 python3-pip `
+Εκτέλεση της εντολής `pip3 install flask pymongo` μέσα στο image για την εγκατάσταση των βασικών πακέτων στα οποία στηρίζεται το application μας. 
+`RUN pip3 install flask pymongo `
+Αντιγραφή του αρχείου requirements.txt από τον host στο directory /requirements:
+`COPY requirements.txt /requirements/requirements.txt`
+Εκτέλεση της εντολής εγκατάστασης των requirements από αρχείο μέσα στο image:
+`RUN pip3 install -r requirements/requirements.txt`
+Εκτέλεση της εντολής δημιουργίας φακέλου app στο image
+`RUN mkdir /app`
+Δημιουργία του directory /app/data και του /app εφόσον δεν υπάρχει (flag -p):
+`RUN mkdir -p /app/data`
+Αντιγραφή του service.py μέσα στο φάκελο app του image:
+`COPY service.py /app/service.py`  
+Αντιγραφή του data μέσα στο directory app/data:
+`ADD data /app/data` 
+Μετάβαση στο directory app :
+`WORKDIR /app`
+Ορισμός του default command που θα εκτελείται όταν τρέχει το container του image:
+`ENTRYPOINT [ "python3","-u", "service.py" ]`
+
+Composing with .yml 
+-
+Εκτελείτε την εντολή `docker-compose up` στο directory που βρίσκεται το αρχείο .yml
+
+Μετά την εκτέλεση της εντολής θα χρειαστεί να εισάγετε τα δεδομένα users.json, movies.json στα αντίστοιχα collection με τις εντολές στην ενότητα "Αντιγραφή των αρχείων με τα data σε json"
 
 Μαθηματικές γνώσεις - Adjustment μέσου όρου χωρίς επανυπολογισμό
 -
