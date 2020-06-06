@@ -1,0 +1,87 @@
+{
+  "_id": "b3ad96caa4a187a775bc99e1",
+  "title": "Inception",
+  "year": 2010,
+  "description": "Weird Dream Stuff",
+  "actors": [
+    {
+      "name": "Leonardo DiCaprio"
+    },
+    {
+      "name": "Cillian Murphy"
+    }
+  ],
+  "rating": 8.8,
+  "comments": [
+    {
+      "email": "jsm@hotmail.gr",
+      "com": "Absolutely amazing, did they escape the dream"
+    }
+  ],
+  "totalratings": 1,
+  "ratings": [
+    {
+      "email": "jsm@hotmail.gr",
+      "rate": 8.8
+    }
+  ]
+}
+{
+  "_id": "b3ad96caa4a187a775bc99e2",
+  "title": "Joker",
+  "year": 2019,
+  "description": "Schizo actors nice ending",
+  "actors": [
+    {
+      "name": "Joaquin Phoenix"
+    },
+    {
+      "name": "Robert De Niro"
+    },
+    {
+      "name": "Zazie Beetz"
+    }
+  ],
+  "rating": 8.5,
+  "comments": [
+    {
+      "email": "jsm@hotmail.gr",
+      "com": "Nice one, right in the feels"
+    }
+  ],
+  "totalratings": 1,
+  "ratings": [
+    {
+      "email": "jsm@hotmail.gr",
+      "rate": 8.5
+    }
+  ]
+}
+{
+  "_id": "b3ad96caa4a187a775bc99e3",
+  "title": "Avengers: Endgame",
+  "year": 2019,
+  "description": "I won't spoil",
+  "actors": [
+    {
+      "name": "Josh Brolin"
+    },
+    {
+      "name": "Tony Stark"
+    }
+  ],
+  "rating": 8.4,
+  "comments": [
+    {
+      "email": "jsm@hotmail.gr",
+      "com": "YAYYY!!!!"
+    }
+  ],
+  "totalratings": 1,
+  "ratings": [
+    {
+      "email": "jsm@hotmail.gr",
+      "rate": 8.4
+    }
+  ]
+}
