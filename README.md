@@ -171,6 +171,13 @@ Composing with .yml
 -
 Εκτελείτε την εντολή `docker-compose up` στο directory που βρίσκεται το αρχείο .yml
 
+##### Για τελείως καθαρό build:
+```
+docker-compose rm --all &&
+docker-compose pull &&
+docker-compose build --no-cache &&
+docker-compose up -d --force-recreate
+```
 Μετά την εκτέλεση της εντολής θα χρειαστεί να εισάγετε τα δεδομένα users.json, movies.json στα αντίστοιχα collection με τις εντολές στην ενότητα "Αντιγραφή των αρχείων με τα data σε json"
 
 Μαθηματικές γνώσεις - Adjustment μέσου όρου χωρίς επανυπολογισμό
