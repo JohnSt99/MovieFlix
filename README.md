@@ -1,8 +1,14 @@
 # MovieFlix2020_E17144_Stylianou_Ioannis
 
-![alt text](https://www.ugrow.gr/wp-content/uploads/2019/01/uNIPI.jpg)
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+}
 
-<img src="https://www.ugrow.gr/wp-content/uploads/2019/01/uNIPI.jpg" width="500" height="200" />
+<img src="https://www.ugrow.gr/wp-content/uploads/2019/01/uNIPI.jpg" width="500" height="200" class="center"/>
+
 
 Απαλλακτική εργασία για το μάθημα Πληροφοριακά Συστήματα
 ### Υπεύθυνοι καθηγητές: 
