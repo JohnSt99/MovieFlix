@@ -200,6 +200,8 @@ docker-compose up -d --force-recreate
   removing a value from sum of n:
   s' = s + (s-value) / (n-1)
 
+![alt text](https://i.imgur.com/gCIAPRk.png)
+
 Στοιχεία επικοινωνίας
 -
 Στυλιανού Ιωάννης - jsm@hotmail.gr
