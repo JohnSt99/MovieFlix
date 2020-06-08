@@ -9,7 +9,7 @@
 
 Python
 -
-#### Requirements - automatically install using requirements.txt
+#### Requirements - Εγκατάσταση στον host με την εντολή `pip3 install -r requirements.txt`
 - click==7.1.2
 - Flask==1.1.2
 - itsdangerous==1.1.0
