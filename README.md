@@ -48,6 +48,9 @@ sudo apt install docker-ce
 ```
 
 #### Βασικές εντολές Docker
+##### Την ip διεύθυνση του docker machine τη βρίσκουμε με την εντολη: `docker-machine ls` 
+
+Συνδεόμαστε στο dockerized application τοποθετώντας τη διεύθυνση docker_machine_ip:5000, π.χ. 192.168.99.100:5000/login
 - Προβολή λίστας με όλα τα images που έχουμε τοπικά στον υπολογιστή μας: `docker images`
 - Εμφάνιση λίστας με όλα τα container που έχουμε στον υπολογιστή μας: `docker ps -a`
 - Δημιουργία και εκτέλεση container (Αν δεν υπάρχει ήδη τοπικά στον υπολογιστή, θα γίνει και κατέβασμα): `docker run image_name --name friendly_name -p HOST_PORT:DOCKER_PORT`
