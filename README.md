@@ -176,7 +176,7 @@ sudo apt install docker-ce
 
 `ENTRYPOINT [ "python3","-u", "service.py" ]`
 
-Composing with .yml 
+Composing με το αρχείο .yml 
 -
 Εκτελείτε την εντολή `docker-compose up` στο directory που βρίσκεται το αρχείο .yml
 
