@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search Movies</title>
+</head>
+<body>
+<h4>Insert one of the following criteria you want to search by:</h4>
+<form name="Search by Title" action="/moviesby" method="post">
+    <label>By title:</label>
+    <input type="text" name="title">
+<input type="submit" value="Search">
+<br><br>
+
+<form name="Search by Year" action="/moviesby" method="post">
+    <label>By year:</label>
+    <input type="number" name="year" min="1870" max="2030">
+<input type="submit" value="Search">
+<br><br>
+
+<form name="Search by actor" action="/moviesby" method="post">
+    <label>By actor:</label>
+    <input type="text" name="actor">
+<input type="submit" value="Search">
+<br><br>
+
+    
+</form>
+</body>
+</html>

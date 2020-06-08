@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rate</title>
+</head>
+<body>
+<form name="addrating" action="/addrating" method="post">
+    <label>Email:</label>
+    <br>
+    <input type="email" name="email">
+    <br><br>
+    <label>Movie title:</label>
+    <br>
+    <input type="text" name="title">
+    <br><br>
+    <label>Year:</label>
+    <br>
+    <input type="number" name="year" min="1870" max="2030">
+    <br><br>
+    <label>Rating:</label>
+    <br>
+    <input type="number" name="rating" step="0.1">
+    <br><br>
+    
+    <input type="submit" value="Rate">
+</form>
+</body>
+</html>

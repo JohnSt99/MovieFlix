@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Comment</title>
+</head>
+<body>
+<form name="comment" action="/addcomment" method="post" id="commentform">
+    <label>Email:</label>
+    <br>
+    <input type="email" name="email">
+    <br><br>
+    <label>Movie title:</label>
+    <br>
+    <input type="text" name="title">
+    <br><br>
+    <label>Year:</label>
+    <br>
+    <input type="number" name="year" min="1870" max="2030">
+    <br><br>
+    <label>Comment:</label>
+    <br>
+    <textarea name="comment" from="commentform" rows="4" cols="30"></textarea>
+    <br><br>
+    <input type="submit" value="Comment">
+</form>
+</body>
+</html>
