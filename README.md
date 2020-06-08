@@ -1,4 +1,4 @@
-# MovieFlix2020_E17144_Stylianou_Ioannis
+# MovieFlix - Στυλιανού Ιωάννης - Ε17144
 
 <img src="https://i.imgur.com/y7UBuNo.png">
 
