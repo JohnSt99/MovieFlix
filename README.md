@@ -1,6 +1,6 @@
 # MovieFlix2020_E17144_Stylianou_Ioannis
 
-<img src="https://i.imgur.com/ysn5q6g.png">
+<img src="https://i.imgur.com/kul9nkX.png">
 
 Απαλλακτική εργασία για το μάθημα Πληροφοριακά Συστήματα
 ### Υπεύθυνοι καθηγητές: 
