@@ -193,10 +193,10 @@ docker-compose up -d --force-recreate
   https://math.stackexchange.com/questions/22348/how-to-add-and-subtract-values-from-an-average
   
   adding a value in sum of n:
-  s' = s + (value -s) /n+1
+  s' = s + (value-s) / n+1
 
   removing a value from sum of n:
-  s' = (ns-value)/n-1
+  s' = s + (s-value) / (n-1)
 
 Στοιχεία επικοινωνίας
 -
