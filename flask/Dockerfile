@@ -8,6 +8,7 @@ RUN pip3 install -r requirements/requirements.txt
 RUN mkdir /app
 RUN mkdir -p /app/data
 COPY service.py /app/service.py  
+COPY templates /app/templates
 ADD data /app/data 
 WORKDIR /app
 ENTRYPOINT [ "python3","-u", "service.py" ]
