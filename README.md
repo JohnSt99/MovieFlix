@@ -2,6 +2,8 @@
 
 ![alt text](https://www.ugrow.gr/wp-content/uploads/2019/01/uNIPI.jpg)
 
+<img src="https://camo.githubusercontent.com/..." data-canonical-src="https://www.ugrow.gr/wp-content/uploads/2019/01/uNIPI.jpg" width="200" height="400" />
+
 Απαλλακτική εργασία για το μάθημα Πληροφοριακά Συστήματα
 ### Υπεύθυνοι καθηγητές: 
 - Χρυσόστομος Συμβουλίδης, simvoul@unipi.gr
