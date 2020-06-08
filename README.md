@@ -4,8 +4,8 @@
 
 Απαλλακτική εργασία για το μάθημα Πληροφοριακά Συστήματα
 ### Υπεύθυνοι καθηγητές: 
-- Χρυσόστομος Συμβουλίδης, simvoul@unipi.gr
-- Jean-Didier Totow, totow@unipi.gr 
+- Χρυσόστομος Συμβουλίδης, simvoul@unipi.gr - https://github.com/csymvoul
+- Jean-Didier Totow, totow@unipi.gr - 
 
 Python
 -
