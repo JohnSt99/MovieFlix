@@ -155,6 +155,10 @@ sudo apt install docker-ce
 
 `COPY service.py /app/service.py`  
 
+Αντιγραφή των html templates μέσα στο φάκελο templates:
+
+`COPY templates /app/templates`
+
 Αντιγραφή του data μέσα στο directory app/data:
 
 `ADD data /app/data` 
