@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-from flask import Flask, request, jsonify, redirect, Response, render_template
+from flask import Flask, session, request, jsonify, redirect, Response, render_template
+from functools import wraps
 import json, os, sys 
 sys.path.append('./data')
 import prepare_data
@@ -15,6 +16,7 @@ users = db['Users']
 movies = db['Movies']
 # Initiate Flask App
 app = Flask(__name__)
+app.secret_key = 'super secret string'
 import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.INFO)
@@ -49,14 +51,23 @@ def is_admin(mail):
         return usr['access'] == str(ACCESS['admin']) or usr['access'] == (ACCESS['admin'])
     except Exception:
         return Response({'is_admin Function error'},status=500,mimetype='application/json')
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        usr = users.find_one({'email': session['email']})
+        if not (usr['access'] == str(ACCESS['admin']) or usr['access'] == (ACCESS['admin'])) :
+            return Response("This action requires admin priviledges",status=401,mimetype='application/json')  
+        return f(*args, **kwargs)
+    return decorated_function
     
-def is_loggedin(mail):
-    try:
-        usr = users.find_one({'email': mail})
-        return usr['loggedin'] == "1"
-    except Exception:
-        return Response({'is_loggedin Function error'},status=500,mimetype='application/json')
-    
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not 'email' in session:
+            return Response("You must be logged in to perform this action",status=401,mimetype='application/json')  
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/', methods=['GET'])
 def index():
@@ -77,10 +88,6 @@ def register_user():
             data = request.form.to_dict(flat=True)
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-        #try:
-        #    data = json.loads(request.data)
-        #except Exception:
-        #    return Response("bad json content",status=500,mimetype='application/json')
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
         if not "name" in data or not "email" in data or not "password" in data:
@@ -88,50 +95,37 @@ def register_user():
         
         if users.count_documents({"email":data["email"]}) < 1 :
             try: 
-                usr = {"name": data['name'], "email": data['email'], "password": data['password'], "comments": [], "access": ACCESS['user'], "loggedin": "0"}
+                usr = {"name": data['name'], "email": data['email'], "password": data['password'], "comments": [], "access": ACCESS['user']}
                 # Add user to the 'users' collection
                 users.insert_one(usr)
                 #return Response(data['name']+" was added to the MongoDB",status=200,mimetype='application/json') 
                 return render_template('register_out.html', name=data['name'], email=data['email'], password=data['password'])
-            except Exception :
+            except Exception:
                 return Response({'Could not make any changes'},status=500,mimetype='application/json')
         else:
             return Response("A user with the given email already exists",status=200,mimetype='application/json')
 
 # Logout user
-@app.route('/logout', methods=['GET','POST'])
+@app.route('/logout', methods=['GET'])
+@login_required
 def logout_user():
     data = None 
     if request.method == 'GET':
-        return render_template('logout.html')
-    if request.method == 'POST':
         try:
             data = request.form.to_dict(flat=True)
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-        #try:
-        #    data = json.loads(request.data)
-        #except Exception:
-        #    return Response("bad json content",status=500,mimetype='application/json')
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
-        if not "email" in data or not "password" in data:
-            return Response("Wrong key.",status=500,mimetype="application/json")
-        if users.count_documents({"email":data["email"]}) < 1 :
-            return Response("A user with the given email doesn't exist, please register first.",status=200,mimetype='application/json') 
-        usr = users.find_one({"email": data['email']})
-        if usr['password'] != data['password']:
-            return Response("Wrong password, try again",status=200,mimetype='application/json')
-        if usr['loggedin'] == "1":
-            try:
-                ud = { "$set": {"loggedin": "0" } }
-                users.update_one(usr, ud)
-                return Response("Logout successful! ",status=200,mimetype='application/json')
-            except Exception:
-                return Response({'Could not make any changes'},status=500,mimetype='application/json')
-        else:
-            return Response("User is currently logged out.",status=200,mimetype='application/json')
-
+        if users.count_documents({"email":session["email"]}) < 1 :
+            return Response("User in session but not in database, report this error to admins",status=500,mimetype='application/json') 
+        try:
+            session.pop('name', None)
+            session.pop('email', None)
+            return Response("Logout successful! ",status=200,mimetype='application/json')
+        except Exception:
+            return Response({'Could not make any changes'},status=500,mimetype='application/json')
+       
 # Log in user
 @app.route('/login', methods=['GET','POST'])
 def login_user():
@@ -143,30 +137,27 @@ def login_user():
             data = request.form.to_dict(flat=True)
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-        #try:
-        #    data = json.loads(request.data)
-        #except Exception:
-        #    return Response("bad json content",status=500,mimetype='application/json')
+        if 'email' in session:
+            return Response("User "+session['email']+ " is already logged in.")
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
         if not "email" in data or not "password" in data:
             return Response("Information incomplete",status=500,mimetype="application/json")
         if users.count_documents({"email":data["email"]}) < 1 :
-            return Response("A user with the given email doesn't exist, please register first.",status=200,mimetype='application/json') 
-        if users.find_one({"email": data['email']})['loggedin'] == "1" :
-            return Response("User is already logged in from another computer, please log out first")
+            return Response("User in session but not in database, report this error to admins",status=500,mimetype='application/json') 
         try:
             usr = users.find_one({"email": data['email']})
             if usr['password'] == data['password']:
-                ud = { "$set": {"loggedin": "1" } }
-                users.update_one(usr, ud)
+                session['email'] = data['email']
+                session['username'] = usr['name']
                 return Response("Login successful! ",status=200,mimetype='application/json') 
-        except Exception :
+        except Exception:
             return Response({'Could not make any changes'},status=500,mimetype='application/json')
         return Response("Incorrect password. Please try logging in again",status=200,mimetype='application/json')   
 
 # Find movies
 @app.route('/moviesby', methods=['GET', 'POST'])
+@login_required
 def movies_by():
     if request.method == 'GET' :
         return render_template('moviesby.html')
@@ -187,6 +178,7 @@ def movies_by():
 
 # By title
 @app.route('/moviesbytitle/<string:title>', methods=['GET'])
+@login_required
 def movies_by_title(title):
     if title == None:
         return Response("Bad request", status=500, mimetype='application/json')
@@ -205,6 +197,7 @@ def movies_by_title(title):
 
 # By year
 @app.route('/moviesbyyear/<int:year>', methods=['GET'])
+@login_required
 def movies_by_year(year):
     if year == None:
         return Response("Bad request", status=500, mimetype='application/json')
@@ -223,6 +216,7 @@ def movies_by_year(year):
     
 # By actors
 @app.route('/moviesbyactor/<string:actor>', methods=['GET'])
+@login_required
 def movies_by_actor(actor):
     if actor == None:
         return Response("Bad request", status=500, mimetype='application/json')
@@ -241,11 +235,13 @@ def movies_by_actor(actor):
 
 #Movie
 @app.route('/getinfo', methods=['GET'])
+@login_required
 def movie():
     return render_template('info.html')
 
 # Movie info 
 @app.route('/movie', methods=['POST'])
+@login_required
 def get_movie_info():
     try:
         title = request.form['title']
@@ -259,6 +255,7 @@ def get_movie_info():
 
 # Movie comments
 @app.route('/comments', methods=['POST'])
+@login_required
 def get_movie_comments():
     try:
         title = request.form['title']
@@ -275,6 +272,7 @@ def get_movie_comments():
 
 # Add Rating
 @app.route('/addrating', methods=['GET','POST'])
+@login_required
 def add_rating():
     data = None 
     if request.method == 'GET':
@@ -290,12 +288,10 @@ def add_rating():
         #    return Response("bad json content",status=500,mimetype='application/json')
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
-        if not "email" in data or not "title" in data or not "year" in data or not "rating" in data:
+        if not "title" in data or not "year" in data or not "rating" in data:
             return Response("Information incomplete",status=500,mimetype="application/json")
-        if not is_loggedin(data['email']):
-            return Response("You must be logged in to perform this action",status=401,mimetype='application/json')  
-        if users.count_documents({"email":data["email"]}) < 1 :
-            return Response("A user with the given email doesn't exist, please register first.",status=200,mimetype='application/json') 
+        if users.count_documents({"email":session["email"]}) < 1 :
+            return Response("User in session but not in database, report this error to admins",status=50000,mimetype='application/json') 
         movie = movies.find_one({"title": data['title'], "year": int(data['year'])})
         if movie == None:
             return Response('No movie found with the title '+ data['title'] +' published on '+data['year']+ ' was found',status=200,mimetype='application/json')
@@ -303,12 +299,12 @@ def add_rating():
             ratings = movie['ratings']
             found = 0
             for r in ratings :
-                if r['email']==data['email']:
+                if r['email']==session['email']:
                     found = 1
             if found == 1 :        
                 return Response("User has already rated this movie",status=200,mimetype="application/json")
                         
-            newrate = {"email": data['email'], "rate": float(data['rating'])}
+            newrate = {"email": session['email'], "rate": float(data['rating'])}
             ratings.append(newrate)
             query = {"title": data['title'], "year":  int(data['year'])}
             movie = movies.find_one(query)
@@ -332,6 +328,7 @@ def add_rating():
 
 # Remove Own Rating
 @app.route('/removerating', methods=['GET','POST'])
+@login_required
 def rem_rating():
     data = None 
     if request.method == 'GET':
@@ -341,18 +338,12 @@ def rem_rating():
             data = request.form.to_dict(flat=True)
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-        #try:
-        #    data = json.loads(request.data)
-        #except Exception:
-        #    return Response("bad json content",status=500,mimetype='application/json')
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
-        if not "email" in data or not "title" in data or not "year" in data:
+        if not "title" in data or not "year" in data:
             return Response("Information incomplete",status=500,mimetype="application/json")
-        if not is_loggedin(data['email']):
-            return Response("You must be logged in to perform this action",status=401,mimetype='application/json')  
-        if users.count_documents({"email":data["email"]}) < 1 :
-            return Response("A user with the given email doesn't exist, please register first.",status=200,mimetype='application/json') 
+        if users.count_documents({"email":session["email"]}) < 1 :
+            return Response("User in session but not in database, report this error to admins",status=5000,mimetype='application/json') 
         movie = movies.find_one({"title": data['title'], "year": int(data['year'])})
         if movie == None:
             return Response('No movie found with the title '+ data['title'] +' published on '+str(data['year'])+ ' was found',status=200,mimetype='application/json')
@@ -362,7 +353,7 @@ def rem_rating():
             found = 0
             numbertorem = -1
             for r in ratings :
-                if r['email']==data['email']:
+                if r['email']==session['email']:
                     found = 1
                     numbertorem = r['rate']
                 else:
@@ -393,6 +384,7 @@ def rem_rating():
 
 # Add Comment
 @app.route('/addcomment', methods=['GET', 'POST'])
+@login_required
 def add_comment():
     data = None 
     if request.method == 'GET':
@@ -402,18 +394,12 @@ def add_comment():
             data = request.form.to_dict(flat=True)
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-        #try:
-        #    data = json.loads(request.data)
-        #except Exception:
-        #    return Response("bad json content",status=500,mimetype='application/json')
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
-        if not "email" in data or not "title" in data or not "year" in data or not "comment" in data:
+        if not "title" in data or not "year" in data or not "comment" in data:
             return Response("Information incomplete",status=500,mimetype="application/json")
-        if not is_loggedin(data['email']):
-            return Response("You must be logged in to perform this action",status=401,mimetype='application/json')  
-        if users.count_documents({"email":data["email"]}) < 1 :
-            return Response("A user with the given email doesn't exist, please register first.",status=200,mimetype='application/json') 
+        if users.count_documents({"email":session["email"]}) < 1 :
+            return Response("User in session but not in database, report this error to admins",status=5000,mimetype='application/json') 
         movie = movies.find_one({"title": data['title'], "year": int(data['year'])})
         if movie == None:
             return Response('No movie found with the title '+ data['title'] +' was found',status=200,mimetype='application/json')
@@ -421,12 +407,12 @@ def add_comment():
             comments = movie['comments']
             found = 0
             for c in comments :
-                if c['email']==data['email']:
+                if c['email']==session['email']:
                     found = 1
             if found == 1 :        
                 return Response("User has already commented on this movie",status=200,mimetype="application/json")
                         
-            newcom = {"email": data['email'], "com": data['comment']}
+            newcom = {"email": session['email'], "com": data['comment']}
             comments.append(newcom)
             query = {"title": data['title'], "year": int(data['year'])}
             ud = { "$set": {"comments": comments } }
@@ -436,18 +422,18 @@ def add_comment():
             return Response({'Could not make any changes'},status=500,mimetype='application/json')
 #User Info 
 @app.route('/getuserinfo', methods=['GET'])
+@login_required
 def userinfo():
     return render_template('userinfo.html')
 
 # Show all user comments
 @app.route('/usercomments', methods=['POST'])
+@login_required
 def user_comments():
     email = request.form['email']
     print(email)
     if email == None:
         return Response("Bad request", status=500, mimetype='application/json')
-    if not is_loggedin(email):
-        return Response("You must be logged in to perform this action",status=401,mimetype='application/json')
     try:
         iterable = movies.find()
         output = []
@@ -467,12 +453,11 @@ def user_comments():
 
 # Show all user ratings
 @app.route('/userratings', methods=['POST'])
+@login_required
 def user_ratings():
     email = request.form['email']
     if email == None:
         return Response("Bad request", status=500, mimetype='application/json')
-    if not is_loggedin(email):
-        return Response("You must be logged in to perform this action",status=401,mimetype='application/json')
     try:
         iterable = movies.find()
         output = []
@@ -492,6 +477,7 @@ def user_ratings():
 
 # Delete own comment
 @app.route('/deletecomment', methods=['GET','POST'])
+@login_required
 def del_comment():
     data = None
     if request.method == 'GET':
@@ -501,19 +487,13 @@ def del_comment():
             data = request.form.to_dict(flat=True)
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-        #try:
-        #    data = json.loads(request.data)
-        #except Exception:
-        #    return Response("bad json content",status=500,mimetype='application/json')
     
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
-        if not "email" in data or not "title" in data or not "year" in data:
+        if not "title" in data or not "year" in data:
             return Response("Information incomplete",status=500,mimetype="application/json")
-        if not is_loggedin(data['email']):
-            return Response("You must be logged in to perform this action",status=401,mimetype='application/json')  
-        if users.count_documents({"email":data["email"]}) < 1 :
-            return Response("A user with the given email doesn't exist, please register first.",status=200,mimetype='application/json') 
+        if users.count_documents({"email":session["email"]}) < 1 :
+            return Response("User in session but not in database, report this error to admins",status=500,mimetype='application/json') 
         
         movie = movies.find_one({"title": data['title'], "year": int(data['year'])})
         
@@ -524,7 +504,7 @@ def del_comment():
             comafter = []
             found = 0
             for c in comments :
-                if c['email']==data['email']:
+                if c['email']==session['email']:
                     found = 1
                 else :
                     edited = {"email": c['email'], "com": c['com']}
@@ -542,6 +522,7 @@ def del_comment():
 
 # Delete Account
 @app.route('/deleteaccount', methods=['GET','POST'])
+@login_required
 def delete_account():
     if request.method == 'GET':
         return render_template('deleteaccount.html')
@@ -551,23 +532,19 @@ def delete_account():
             data = request.form.to_dict(flat=True)
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-        #try:
-        #    data = json.loads(request.data)
-        #except Exception:
-        #    return Response("bad json content",status=500,mimetype='application/json')
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
-        if not "email" in data or not "password" in data or not "name" in data:
+        if not "password" in data or not "name" in data:
             return Response("Information incomplete",status=500,mimetype="application/json")
         try: 
-            if users.find_one({"email": data["email"]}) == None:
-                return Response('No user with the email '+ data["email"] +' was found',status=200,mimetype='application/json')
-            usr = users.find_one({"email": data["email"]})
-            if not is_loggedin(data['email']):
-                return Response("You must be logged in to perform this action",status=401,mimetype='application/json')  
+            if users.find_one({"email": session["email"]}) == None:
+                return Response('No user with the email '+ session["email"] +' was found',status=200,mimetype='application/json')
+            usr = users.find_one({"email": session["email"]})
             if usr['password'] == data['password'] and usr['name'] == data['name']:
-                users.delete_one({"email": data["email"]})
-            return Response('Account "'+ data['email'] +'\" has been deleted',status=500,mimetype='application/json')
+                users.delete_one({"email": session["email"]})
+                session.pop('name', None)
+                session.pop('email', None)
+            return Response('Account "'+ session['email'] +'\" has been deleted',status=500,mimetype='application/json')
         except Exception :
             return Response({'Could not make any changes'},status=500,mimetype='application/json')
 
@@ -575,6 +552,8 @@ def delete_account():
 # Admin Endpoints
 # Insert Movie
 @app.route('/addmovie', methods=['GET','POST'])
+@login_required
+@admin_required
 def add_movie():
     data = None 
     if request.method == 'GET':
@@ -584,30 +563,22 @@ def add_movie():
             data = request.form.to_dict(flat=False)
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-    #try:
-    #    data = json.loads(request.data)
-    #except Exception:
-    #    return Response("bad json content",status=500,mimetype='application/json')
+    
     if data == None:
         return Response("bad request",status=500,mimetype='application/json')
-    if not "email" in data or not "title" in data or not "actors" in data:
+    if not "title" in data or not "actors" in data:
         return Response("Information incomplete",status=500,mimetype="application/json")
 
-    data['email'] = data['email'][0]
     data['title'] = data['title'][0]
     if data['year'][0] :
         data['year'] = int(data['year'][0])
     else :
         data['year'] = ''
 
-    if users.count_documents({"email": data['email']}) == 0 :
+    if users.count_documents({"email": session['email']}) == 0 :
         return Response("User does not exist",status=200,mimetype='application/json')  
     try:
-        admin = users.find_one({"email":data['email']})
-        if not is_loggedin(admin['email']):
-                return Response("You must be logged in to perform this action",status=401,mimetype='application/json')  
-        if not is_admin(admin['email']):
-            return Response("The user that performs the action is not an admin", status=401,mimetype='application/json')
+        
 
         
         atleastone = False
@@ -630,6 +601,8 @@ def add_movie():
 
 # Delete Movie
 @app.route('/deletemovie', methods=['GET','POST'])
+@login_required
+@admin_required
 def delete_movie():
     data = None 
     if request.method == 'GET':
@@ -639,25 +612,12 @@ def delete_movie():
             data = request.form.to_dict(flat=True)
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-        title=data['title']
-        #if title == None:
-        #    return Response("Bad request", status=500, mimetype='application/json')
-        #try:
-        #    data = json.loads(request.data)
-        #except Exception:
-        #    return Response("bad json content",status=500,mimetype='application/json')
+        if not "title" in data :
+            return Response("Information incomplete",status=500,mimetype="application/json")
+        title = data['title']
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
-        if not "email" in data :
-            return Response("Information incomplete",status=500,mimetype="application/json")
         try:
-            admin = users.find_one({"email": data["email"]})
-            if not admin :
-                return Response("A user with that email doesn't exist",status=401,mimetype='application/json')
-            if not is_loggedin(admin['email']):
-                return Response("You must be logged in to perform this action",status=401,mimetype='application/json')  
-            if not is_admin(admin['email']):
-                return Response("The user that performs the action is not an admin", status=401,mimetype='application/json')
             if movies.find_one({"title": title}) == None:
                 return Response('No movie found with the title '+ title +' was found',status=200,mimetype='application/json')
             iterable = movies.find({"title": title})
@@ -667,12 +627,13 @@ def delete_movie():
             movs = sorted(output, key=lambda movies: movies['year'])
             movies.delete_one({"_id": movs[0]['_id']})
             return Response('Movie \"'+ title +'\" published on '+ str(movs[0]['year'])+ ' was successfully deleted',status=500,mimetype='application/json')
-        except Exception as e:
-            raise e
+        except Exception:
             return Response({'Could not make any changes'},status=500,mimetype='application/json')
 
 # Update movie
 @app.route('/update', methods=['GET','POST'])
+@login_required
+@admin_required
 def update_movie():
     data = None 
     if request.method == 'GET':
@@ -682,24 +643,16 @@ def update_movie():
             data = request.form.to_dict(flat=False)
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-    #data = None 
-    #try:
-    #    data = json.loads(request.data)
-    #except Exception:
-    #    return Response("bad json content",status=500,mimetype='application/json')
     if data == None:
         return Response("bad request",status=500,mimetype='application/json')
 
-    data['email'] = data['email'][0]
     data['year'] = int(data['year'][0])
     data['title'] = data['title'][0]
     data['description'] = data['description'][0]
-    admin = users.find_one({"email":data['email']})
+    admin = users.find_one({"email":session['email']})
 
-    if not "email" in data or not "year" in data or not "title" in data:
+    if not "year" in data or not "title" in data:
         return Response("Information incomplete",status=500,mimetype="application/json")
-    if not is_loggedin(admin['email']):
-        return Response("You must be logged in to perform this action",status=401,mimetype='application/json')  
     if not is_admin(admin['email']):
         return Response("The user that performs the action is not an admin", status=401,mimetype='application/json')
     if movies.find_one({"title": data['title']}) == None:
@@ -731,6 +684,8 @@ def update_movie():
     
 # Delete any comment
 @app.route('/deleteanycomment', methods=['GET','POST'])
+@login_required
+@admin_required
 def del_any_comment():
     data = None 
     if request.method == 'GET':
@@ -741,23 +696,16 @@ def del_any_comment():
             data['year'] = int(data['year'])
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-        #try:
-        #    data = json.loads(request.data)
-        #except Exception:
-        #    return Response("bad json content",status=500,mimetype='application/json')
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
-        if not "email" in data or not "title" in data or not "year" in data or not "useremail" in data :
+        if not "title" in data or not "year" in data or not "useremail" in data :
             return Response("Information incomplete",status=500,mimetype="application/json")
-        if users.count_documents({"email": data["email"]}) < 1 :
-            return Response("A user with the given email doesn't exist, please register first.",status=200,mimetype='application/json') 
+        if users.count_documents({"email": session["email"]}) < 1 :
+            return Response("User in session but not in database, report this error to admins",status=500,mimetype='application/json') 
         if users.count_documents({"email": data["useremail"]}) < 1 :
             return Response("The target user doesn't exist, check key useremail.",status=200,mimetype='application/json') 
-        if not is_admin(data['email']):
+        if not is_admin(session['email']):
             return Response("This action requires admin priviledges",status=401,mimetype='application/json')  
-        if not is_loggedin(data['email']):
-            return Response("You must be logged in to perform this action",status=401,mimetype='application/json')  
-        
         movie = movies.find_one({"title": data['title'], "year": data['year']})
         
         if movie == None:
@@ -784,6 +732,8 @@ def del_any_comment():
 
 # Make Admin
 @app.route('/makeadmin', methods=['GET','POST'])
+@login_required
+@admin_required
 def make_admin():
     data = None 
     if request.method == 'GET':
@@ -793,35 +743,25 @@ def make_admin():
             data = request.form.to_dict(flat=True)
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-        #try:
-        #    data = json.loads(request.data)
-        #except Exception:
-        #    return Response("bad json content",status=500,mimetype='application/json')
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
-        if not "email" in data or not "useremail" in data :
+        if not "useremail" in data :
             return Response("Information incomplete",status=500,mimetype="application/json")
-        if users.count_documents({"email":data["email"]}) == 1 and users.count_documents({"email":data["useremail"]}) == 1:  
-            admin = users.find_one({"email":data["email"]})
-            if not is_loggedin(admin['email']):
-                return Response("You must be logged in to perform this action",status=401,mimetype='application/json')  
-            if not is_admin(admin['email']):
-                return Response("The user that performs the action is not an admin", status=401,mimetype='application/json')
-        else:
-            return Response("Corresponding users not found", status=200,mimetype='application/json')
         try:
-            query = {"email":data['useremail']}
-            user = users.find_one(query)
+            user = users.find_one({"email":data['useremail']})
+            admin = users.find_one({"email":session['email']})
             if is_admin(user['email']):
                 return Response("The target user is already an admin", status=200,mimetype='application/json')
             ud = { "$set": {"access": ACCESS['admin'] } }
-            users.update_one(query, ud)
+            users.update_one({"email":data['useremail']}, ud)
             return Response(admin['email']+" changed the access level of " + user['email']+ " to "+ str(ACCESS['admin']),status=200,mimetype='application/json') 
         except Exception:
             return Response({'Could not make any changes'},status=500,mimetype='application/json')
 
 # Delete non-admin user
 @app.route('/deleteuser', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def delete_user():
     data = None 
     if request.method == 'GET':
@@ -831,34 +771,21 @@ def delete_user():
             data = request.form.to_dict(flat=True)
         except Exception:
             return Response("Bad form content",status=500,mimetype='application/json')
-        
-        #try:
-        #    data = json.loads(request.data)
-        #except Exception:
-        #    return Response("bad json content",status=500,mimetype='application/json')
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
-        if not "email" in data or not "useremail" in data :
+        if not "useremail" in data :
             return Response("Information incomplete",status=500,mimetype="application/json")
-        if users.count_documents({"email":data["email"]}) == 1 and users.count_documents({"email":data["useremail"]}) == 1:  
-            admin = users.find_one({"email":data["email"]})
-            if not is_loggedin(admin['email']):
-                return Response("You must be logged in to perform this action",status=401,mimetype='application/json')  
-            if not is_admin(admin['email']):
-                return Response("The user that performs the action is not an admin", status=401,mimetype='application/json')
-        else:
-            return Response("Corresponding users not found", status=200,mimetype='application/json')
         try:
             query = {"email": data['useremail']}
             user = users.find_one(query)
             if is_admin(user['email']):
                 return Response("The target user is an admin, cannot delete", status=200,mimetype='application/json')
             users.delete_one({"email": data['useremail']})
-            return Response(admin['email']+" Deleted the user " + user['email'],status=200,mimetype='application/json') 
+            return Response("You Deleted the user " + user['email'],status=200,mimetype='application/json') 
         except Exception:
             return Response({'Could not make any changes'},status=500,mimetype='application/json')
 
 # Run Flask App
 if __name__ == '__main__':
-    check_data()
+    check_data() #comment out this for testing outside of docker
     app.run(debug=True, host='0.0.0.0', port=5000)
