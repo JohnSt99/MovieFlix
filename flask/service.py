@@ -787,5 +787,5 @@ def delete_user():
 
 # Run Flask App
 if __name__ == '__main__':
-    check_data() #comment out this for testing outside of docker
+    check_data()
     app.run(debug=True, host='0.0.0.0', port=5000)
