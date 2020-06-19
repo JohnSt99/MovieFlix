@@ -117,8 +117,6 @@ def logout_user():
             return Response("Bad form content",status=500,mimetype='application/json')
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
-        if users.count_documents({"email":session["email"]}) < 1 :
-            return Response("User in session but not in database, report this error to admins",status=500,mimetype='application/json') 
         try:
             session.pop('name', None)
             session.pop('email', None)
@@ -290,8 +288,6 @@ def add_rating():
             return Response("bad request",status=500,mimetype='application/json')
         if not "title" in data or not "year" in data or not "rating" in data:
             return Response("Information incomplete",status=500,mimetype="application/json")
-        if users.count_documents({"email":session["email"]}) < 1 :
-            return Response("User in session but not in database, report this error to admins",status=50000,mimetype='application/json') 
         movie = movies.find_one({"title": data['title'], "year": int(data['year'])})
         if movie == None:
             return Response('No movie found with the title '+ data['title'] +' published on '+data['year']+ ' was found',status=200,mimetype='application/json')
@@ -341,9 +337,7 @@ def rem_rating():
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
         if not "title" in data or not "year" in data:
-            return Response("Information incomplete",status=500,mimetype="application/json")
-        if users.count_documents({"email":session["email"]}) < 1 :
-            return Response("User in session but not in database, report this error to admins",status=5000,mimetype='application/json') 
+            return Response("Information incomplete",status=500,mimetype="application/json") 
         movie = movies.find_one({"title": data['title'], "year": int(data['year'])})
         if movie == None:
             return Response('No movie found with the title '+ data['title'] +' published on '+str(data['year'])+ ' was found',status=200,mimetype='application/json')
@@ -397,9 +391,7 @@ def add_comment():
         if data == None:
             return Response("bad request",status=500,mimetype='application/json')
         if not "title" in data or not "year" in data or not "comment" in data:
-            return Response("Information incomplete",status=500,mimetype="application/json")
-        if users.count_documents({"email":session["email"]}) < 1 :
-            return Response("User in session but not in database, report this error to admins",status=5000,mimetype='application/json') 
+            return Response("Information incomplete",status=500,mimetype="application/json") 
         movie = movies.find_one({"title": data['title'], "year": int(data['year'])})
         if movie == None:
             return Response('No movie found with the title '+ data['title'] +' was found',status=200,mimetype='application/json')
@@ -492,8 +484,6 @@ def del_comment():
             return Response("bad request",status=500,mimetype='application/json')
         if not "title" in data or not "year" in data:
             return Response("Information incomplete",status=500,mimetype="application/json")
-        if users.count_documents({"email":session["email"]}) < 1 :
-            return Response("User in session but not in database, report this error to admins",status=500,mimetype='application/json') 
         
         movie = movies.find_one({"title": data['title'], "year": int(data['year'])})
         
@@ -537,8 +527,6 @@ def delete_account():
         if not "password" in data or not "name" in data:
             return Response("Information incomplete",status=500,mimetype="application/json")
         try: 
-            if users.find_one({"email": session["email"]}) == None:
-                return Response('No user with the email '+ session["email"] +' was found',status=200,mimetype='application/json')
             usr = users.find_one({"email": session["email"]})
             if usr['password'] == data['password'] and usr['name'] == data['name']:
                 users.delete_one({"email": session["email"]})
@@ -575,12 +563,7 @@ def add_movie():
     else :
         data['year'] = ''
 
-    if users.count_documents({"email": session['email']}) == 0 :
-        return Response("User does not exist",status=200,mimetype='application/json')  
     try:
-        
-
-        
         atleastone = False
         actors = []
         for actorname in data['actors'] :
@@ -649,12 +632,9 @@ def update_movie():
     data['year'] = int(data['year'][0])
     data['title'] = data['title'][0]
     data['description'] = data['description'][0]
-    admin = users.find_one({"email":session['email']})
 
     if not "year" in data or not "title" in data:
         return Response("Information incomplete",status=500,mimetype="application/json")
-    if not is_admin(admin['email']):
-        return Response("The user that performs the action is not an admin", status=401,mimetype='application/json')
     if movies.find_one({"title": data['title']}) == None:
         return Response('No movie found with the title '+ data['title'] +' was found',status=200,mimetype='application/json')
     try:
@@ -700,12 +680,8 @@ def del_any_comment():
             return Response("bad request",status=500,mimetype='application/json')
         if not "title" in data or not "year" in data or not "useremail" in data :
             return Response("Information incomplete",status=500,mimetype="application/json")
-        if users.count_documents({"email": session["email"]}) < 1 :
-            return Response("User in session but not in database, report this error to admins",status=500,mimetype='application/json') 
         if users.count_documents({"email": data["useremail"]}) < 1 :
-            return Response("The target user doesn't exist, check key useremail.",status=200,mimetype='application/json') 
-        if not is_admin(session['email']):
-            return Response("This action requires admin priviledges",status=401,mimetype='application/json')  
+            return Response("The target user doesn't exist, check key useremail.",status=200,mimetype='application/json')
         movie = movies.find_one({"title": data['title'], "year": data['year']})
         
         if movie == None:
@@ -749,12 +725,11 @@ def make_admin():
             return Response("Information incomplete",status=500,mimetype="application/json")
         try:
             user = users.find_one({"email":data['useremail']})
-            admin = users.find_one({"email":session['email']})
             if is_admin(user['email']):
                 return Response("The target user is already an admin", status=200,mimetype='application/json')
             ud = { "$set": {"access": ACCESS['admin'] } }
             users.update_one({"email":data['useremail']}, ud)
-            return Response(admin['email']+" changed the access level of " + user['email']+ " to "+ str(ACCESS['admin']),status=200,mimetype='application/json') 
+            return Response("You changed the access level of " + user['email']+ " to "+ str(ACCESS['admin']),status=200,mimetype='application/json') 
         except Exception:
             return Response({'Could not make any changes'},status=500,mimetype='application/json')
 
